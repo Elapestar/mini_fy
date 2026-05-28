@@ -24,6 +24,12 @@ Desktop.ini
 *.tmp
 *.log
 
+# 项目配置（含密钥，不入库）
+settings.json
+
 # 敏感文件
 .env
 *.secret
+
+# Firecrawl
+.firecrawl/
