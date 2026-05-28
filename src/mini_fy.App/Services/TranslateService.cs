@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Net.Http;
-using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using mini_fy.App.Helpers;
@@ -92,15 +91,20 @@ public class TranslateService : ITranslateService, IDisposable
                 return ErrorResult(text, from, to, httpError);
             }
 
-            var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+            var jsonString = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(jsonString);
+            var json = doc.RootElement;
 
             // Check for error
             if (json.TryGetProperty("error_code", out var errorCode))
             {
                 var errorMsg = json.TryGetProperty("error_msg", out var msg)
                     ? msg.GetString() ?? "" : "";
-                var userMsg = MapErrorCode(errorCode.GetString() ?? "", errorMsg);
-                LogHelper.Error($"Translation API error: {errorCode} - {errorMsg}");
+                var codeStr = errorCode.ValueKind == JsonValueKind.String
+                    ? errorCode.GetString()!
+                    : errorCode.GetRawText();
+                var userMsg = MapErrorCode(codeStr, errorMsg);
+                LogHelper.Error($"Translation API error: {codeStr} - {errorMsg}");
                 return ErrorResult(text, from, to, userMsg);
             }
 
