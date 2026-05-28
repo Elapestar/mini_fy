@@ -84,8 +84,18 @@ public partial class ScreenshotWindow : Window
     {
         try
         {
+            // WPF uses 96 DPI device-independent pixels.
+            // The bitmap may have the screen's physical DPI (e.g. 120 at 125% scaling).
+            // Scale WPF coordinates to bitmap pixel coordinates.
+            double dpiScaleX = _fullScreenBitmap!.HorizontalResolution / 96.0;
+            double dpiScaleY = _fullScreenBitmap!.VerticalResolution / 96.0;
+            int bx = (int)(x * dpiScaleX);
+            int by = (int)(y * dpiScaleY);
+            int bw = (int)(w * dpiScaleX);
+            int bh = (int)(h * dpiScaleY);
+
             ResultBitmap = _fullScreenBitmap!.Clone(
-                new System.Drawing.Rectangle(x, y, w, h),
+                new System.Drawing.Rectangle(bx, by, bw, bh),
                 _fullScreenBitmap.PixelFormat);
         }
         catch
@@ -111,8 +121,10 @@ public partial class ScreenshotWindow : Window
             ImageLockMode.ReadOnly, bitmap.PixelFormat);
         try
         {
+            // Use bitmap's own DPI so WPF maps image 1:1 to screen pixels
             var bmpSrc = BitmapSource.Create(
-                data.Width, data.Height, 96, 96,
+                data.Width, data.Height,
+                bitmap.HorizontalResolution, bitmap.VerticalResolution,
                 PixelFormats.Bgr32, null,
                 data.Scan0, data.Stride * data.Height, data.Stride);
             return bmpSrc;
