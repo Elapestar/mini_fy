@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Node / Electron
+node_modules/
+dist/
+
+# .NET / C#
+bin/
+obj/
+.vs/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+Desktop.ini
+*.tmp
+*.log
+
+# 敏感文件
+.env
+*.secret
