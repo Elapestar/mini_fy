@@ -8,10 +8,19 @@ namespace mini_fy.App.Views;
 public partial class TranslationOverlay : Window
 {
     private TranslationResult? _result;
+    private bool _closing;
 
     public TranslationOverlay()
     {
         InitializeComponent();
+        Closing += (_, _) => _closing = true;
+    }
+
+    private void SafeClose()
+    {
+        if (_closing) return;
+        _closing = true;
+        Close();
     }
 
     public void ShowResult(TranslationResult result, System.Windows.Point? nearPoint)
@@ -105,19 +114,19 @@ public partial class TranslationOverlay : Window
 
     private void CloseButton_Click(object sender, RoutedEventArgs e)
     {
-        Close();
+        SafeClose();
     }
 
     // Close when clicking outside the window
     private void Window_Deactivated(object? sender, EventArgs e)
     {
-        Close();
+        SafeClose();
     }
 
     private void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
         if (e.Key == Key.Escape)
-            Close();
+            SafeClose();
     }
 
     private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

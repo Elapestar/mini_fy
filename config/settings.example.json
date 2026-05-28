@@ -4,8 +4,8 @@
     "key": "Q"
   },
   "baiduApi": {
-    "appId": "",
-    "apiKey": ""
+    "appId": "furina",
+    "apiKey": "12Lu_d8c4gmhp3btpjghdn8bg"
   },
   "ocr": {
     "language": "en"
