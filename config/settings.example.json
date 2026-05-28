@@ -1,0 +1,21 @@
+{
+  "hotkey": {
+    "modifiers": "Ctrl+Alt",
+    "key": "Q"
+  },
+  "baiduApi": {
+    "appId": "",
+    "apiKey": ""
+  },
+  "ocr": {
+    "language": "en"
+  },
+  "screenshot": {
+    "autoSave": false,
+    "savePath": ""
+  },
+  "general": {
+    "autoCopyTranslation": true,
+    "autoStartWithWindows": false
+  }
+}
