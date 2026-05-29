@@ -6,4 +6,5 @@ public interface ITranslateService
 {
     Task<TranslationResult> TranslateAsync(string text, string from = "en", string to = "zh");
     void ClearCache();
+    void RefreshProxySettings();
 }

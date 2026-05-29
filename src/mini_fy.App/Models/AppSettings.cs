@@ -36,4 +36,5 @@ public class GeneralConfig
 {
     public bool AutoCopyTranslation { get; set; } = true;
     public bool AutoStartWithWindows { get; set; } = false;
+    public bool BypassProxy { get; set; } = false;
 }

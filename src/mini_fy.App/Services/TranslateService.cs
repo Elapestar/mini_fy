@@ -13,14 +13,33 @@ public class TranslateService : ITranslateService, IDisposable
     private const int TimeoutSeconds = 10;
 
     private readonly ISettingsService _settings;
-    private readonly HttpClient _httpClient;
+    private HttpClient _httpClient;
     private readonly ConcurrentDictionary<string, string> _cache = new();
     private bool _disposed;
 
     public TranslateService(ISettingsService settings)
     {
         _settings = settings;
-        _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(TimeoutSeconds) };
+        _httpClient = CreateHttpClient();
+    }
+
+    private HttpClient CreateHttpClient()
+    {
+        var handler = new HttpClientHandler();
+        if (_settings.Current.General.BypassProxy)
+        {
+            handler.UseProxy = false;
+            handler.Proxy = null!;
+        }
+        return new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(TimeoutSeconds) };
+    }
+
+    /// <summary>Rebuild HttpClient when proxy setting changes.</summary>
+    public void RefreshProxySettings()
+    {
+        var old = _httpClient;
+        _httpClient = CreateHttpClient();
+        old.Dispose();
     }
 
     public async Task<TranslationResult> TranslateAsync(string text, string from = "en", string to = "zh")

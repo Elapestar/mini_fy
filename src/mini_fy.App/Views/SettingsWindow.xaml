@@ -53,6 +53,8 @@
                           Margin="0,0,0,6" />
                 <CheckBox x:Name="AutoCopyCheck" Content="翻译结果自动复制到剪贴板"
                           IsChecked="True" Margin="0,0,0,6" />
+                <CheckBox x:Name="BypassProxyCheck" Content="直连翻译 API（绕过系统代理）"
+                          Margin="0,0,0,6" />
 
                 <Separator Margin="0,14" />
 

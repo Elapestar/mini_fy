@@ -33,6 +33,7 @@ public partial class SettingsWindow : Window
         AutoSaveCheck.IsChecked = cfg.Screenshot.AutoSave;
         AutoCopyCheck.IsChecked = cfg.General.AutoCopyTranslation;
         AutoStartCheck.IsChecked = cfg.General.AutoStartWithWindows;
+        BypassProxyCheck.IsChecked = cfg.General.BypassProxy;
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)
@@ -45,8 +46,10 @@ public partial class SettingsWindow : Window
         cfg.Screenshot.AutoSave = AutoSaveCheck.IsChecked == true;
         cfg.General.AutoCopyTranslation = AutoCopyCheck.IsChecked == true;
         cfg.General.AutoStartWithWindows = AutoStartCheck.IsChecked == true;
+        cfg.General.BypassProxy = BypassProxyCheck.IsChecked == true;
 
         _settings.Save();
+        _translateService?.RefreshProxySettings();
         LogHelper.Info($"Settings saved.");
         DialogResult = true;
         Close();
