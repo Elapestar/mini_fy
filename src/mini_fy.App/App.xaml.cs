@@ -142,7 +142,7 @@ public partial class App : Application
             // Auto-copy
             if (result.Success && _settingsService.Current.General.AutoCopyTranslation)
             {
-                System.Windows.Clipboard.SetText(result.TranslatedText);
+                SafeCopyToClipboard(result.TranslatedText);
             }
 
             _overlayService.Show(result);
@@ -157,6 +157,25 @@ public partial class App : Application
                 ErrorMessage = $"程序异常: {ex.Message}"
             });
         }
+    }
+
+    // Clipboard access may fail if another app has it locked (common in games).
+    // Retry up to 5 times with a brief delay.
+    private static void SafeCopyToClipboard(string text)
+    {
+        for (int i = 0; i < 5; i++)
+        {
+            try
+            {
+                System.Windows.Clipboard.SetText(text);
+                return;
+            }
+            catch (System.Runtime.InteropServices.COMException)
+            {
+                Thread.Sleep(80);
+            }
+        }
+        LogHelper.Warning("Failed to copy to clipboard after 5 retries");
     }
 
     private void OpenSettings()
