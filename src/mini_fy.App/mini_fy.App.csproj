@@ -16,8 +16,13 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.0.4" />
-    <Resource Include="Assets\tray.ico" />
     <Resource Include="Assets\app_icon.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Assets\tray.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

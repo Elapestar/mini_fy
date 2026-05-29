@@ -34,3 +34,5 @@ settings.json
 # Firecrawl
 .firecrawl/
 publish/
+publish-v2/
+publish-self-contained/
