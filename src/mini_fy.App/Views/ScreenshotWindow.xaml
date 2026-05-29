@@ -6,22 +6,27 @@
         Topmost="True"
         ShowInTaskbar="False"
         WindowState="Maximized"
-        Background="#66000000"
+        Background="Transparent"
         Cursor="Cross"
         KeyDown="Window_KeyDown">
     <Grid x:Name="MainGrid">
-        <!-- Screen freeze background -->
+        <!-- Screen freeze: full brightness -->
         <Image x:Name="BackgroundImage" Stretch="Fill" />
-        <!-- Selection rectangle overlay -->
+
+        <!-- Dark overlay with selection hole -->
+        <Path x:Name="DimOverlay" Fill="#AA000000" Visibility="Collapsed" />
+
+        <!-- Selection border (drawn on top of hole edge) -->
+        <Rectangle x:Name="SelectionRect"
+                   Stroke="#FF4080FF"
+                   StrokeThickness="2"
+                   Fill="Transparent"
+                   Visibility="Collapsed" />
+
+        <!-- Mouse interaction layer (topmost) -->
         <Canvas x:Name="SelectionCanvas" Background="Transparent"
                 MouseLeftButtonDown="Canvas_MouseLeftButtonDown"
                 MouseMove="Canvas_MouseMove"
-                MouseLeftButtonUp="Canvas_MouseLeftButtonUp">
-            <Rectangle x:Name="SelectionRect"
-                       Stroke="#FF4080FF"
-                       StrokeThickness="2"
-                       Fill="#204080FF"
-                       Visibility="Collapsed" />
-        </Canvas>
+                MouseLeftButtonUp="Canvas_MouseLeftButtonUp" />
     </Grid>
 </Window>

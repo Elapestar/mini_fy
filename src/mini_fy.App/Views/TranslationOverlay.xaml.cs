@@ -33,7 +33,7 @@ public partial class TranslationOverlay : Window
             OriginalTextBlock.Text = result.OriginalText;
             TranslatedTextBlock.Text = result.TranslatedText;
             TranslatedTextBlock.Foreground = new SolidColorBrush(
-                System.Windows.Media.Color.FromRgb(124, 252, 0));
+                System.Windows.Media.Colors.Black);
 
             // Double-click translated text to copy
             TranslatedTextBlock.MouseLeftButtonDown += (_, _) =>
@@ -41,7 +41,7 @@ public partial class TranslationOverlay : Window
                 if (_result != null)
                 {
                     System.Windows.Clipboard.SetText(_result.TranslatedText);
-                    FlashCopyButton();
+                    FlashCopyButton(CopyButton, "复制译文");
                 }
             };
             TranslatedTextBlock.Cursor = System.Windows.Input.Cursors.Hand;
@@ -93,23 +93,30 @@ public partial class TranslationOverlay : Window
         Top = y;
     }
 
+    private void CopyOriginalButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_result == null) return;
+        System.Windows.Clipboard.SetText(_result.OriginalText);
+        FlashCopyButton(CopyOriginalButton, "复制原文");
+    }
+
     private void CopyButton_Click(object sender, RoutedEventArgs e)
     {
         if (_result?.Success == true)
         {
             System.Windows.Clipboard.SetText(_result.TranslatedText);
-            FlashCopyButton();
+            FlashCopyButton(CopyButton, "复制译文");
         }
     }
 
-    private async void FlashCopyButton()
+    private async void FlashCopyButton(System.Windows.Controls.Button btn, string label)
     {
-        CopyButton.Background = new SolidColorBrush(Colors.Green);
-        CopyButton.Content = "已复制!";
+        var originalBg = btn.Background;
+        btn.Background = new SolidColorBrush(Colors.Green);
+        btn.Content = "已复制!";
         await Task.Delay(600);
-        CopyButton.Background = new SolidColorBrush(
-            System.Windows.Media.Color.FromRgb(0, 120, 212));
-        CopyButton.Content = "复制译文";
+        btn.Background = originalBg;
+        btn.Content = label;
     }
 
     private void CloseButton_Click(object sender, RoutedEventArgs e)

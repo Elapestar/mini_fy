@@ -77,11 +77,14 @@
 
             <!-- Action buttons -->
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="CopyOriginalButton" Content="复制原文"
+                        Style="{StaticResource CopyButton}"
+                        Click="CopyOriginalButton_Click" />
                 <Button x:Name="CopyButton" Content="复制译文"
                         Style="{StaticResource CopyButton}"
-                        Click="CopyButton_Click" />
+                        Click="CopyButton_Click" Margin="6,0,0,0" />
                 <Button Content="✕" Style="{StaticResource CloseButton}"
-                        Click="CloseButton_Click" Margin="8,0,0,0" />
+                        Click="CloseButton_Click" Margin="6,0,0,0" />
             </StackPanel>
         </StackPanel>
     </Border>

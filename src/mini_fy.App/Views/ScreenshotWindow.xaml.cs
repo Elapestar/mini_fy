@@ -25,7 +25,6 @@ public partial class ScreenshotWindow : Window
     {
         _fullScreenBitmap = fullScreen;
         BackgroundImage.Source = BitmapToImageSource(fullScreen);
-        // Prevent this window from stealing focus
         var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
         Win32Api.SetWindowPos(hwnd, Win32Api.HWND_TOPMOST, 0, 0, 0, 0,
             Win32Api.SWP_NOMOVE | Win32Api.SWP_NOSIZE | Win32Api.SWP_NOACTIVATE | Win32Api.SWP_SHOWWINDOW);
@@ -33,28 +32,45 @@ public partial class ScreenshotWindow : Window
 
     private void Canvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        _startPoint = e.GetPosition(SelectionCanvas);
+        _startPoint = e.GetPosition(MainGrid);
         _isSelecting = true;
+
+        // Show dim overlay and selection border
+        DimOverlay.Visibility = Visibility.Visible;
         SelectionRect.Visibility = Visibility.Visible;
-        System.Windows.Controls.Canvas.SetLeft(SelectionRect, _startPoint.X);
-        System.Windows.Controls.Canvas.SetTop(SelectionRect, _startPoint.Y);
-        SelectionRect.Width = 0;
-        SelectionRect.Height = 0;
         SelectionCanvas.CaptureMouse();
     }
 
     private void Canvas_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
     {
         if (!_isSelecting) return;
-        var pos = e.GetPosition(SelectionCanvas);
+        var pos = e.GetPosition(MainGrid);
         var x = Math.Min(pos.X, _startPoint.X);
         var y = Math.Min(pos.Y, _startPoint.Y);
         var w = Math.Abs(pos.X - _startPoint.X);
         var h = Math.Abs(pos.Y - _startPoint.Y);
-        System.Windows.Controls.Canvas.SetLeft(SelectionRect, x);
-        System.Windows.Controls.Canvas.SetTop(SelectionRect, y);
+
+        // Position the selection border
         SelectionRect.Width = w;
         SelectionRect.Height = h;
+        SelectionRect.Margin = new Thickness(x, y, 0, 0);
+        SelectionRect.HorizontalAlignment = System.Windows.HorizontalAlignment.Left;
+        SelectionRect.VerticalAlignment = System.Windows.VerticalAlignment.Top;
+
+        // Dark overlay with a "hole" for the selection
+        UpdateDimOverlay(x, y, w, h);
+    }
+
+    private void UpdateDimOverlay(double x, double y, double w, double h)
+    {
+        if (w <= 0 || h <= 0) return;
+
+        var screenRect = new RectangleGeometry(
+            new Rect(0, 0, MainGrid.ActualWidth, MainGrid.ActualHeight));
+        var holeRect = new RectangleGeometry(new Rect(x, y, w, h));
+
+        DimOverlay.Data = new CombinedGeometry(
+            GeometryCombineMode.Exclude, screenRect, holeRect);
     }
 
     private void Canvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -63,7 +79,7 @@ public partial class ScreenshotWindow : Window
         _isSelecting = false;
         SelectionCanvas.ReleaseMouseCapture();
 
-        var pos = e.GetPosition(SelectionCanvas);
+        var pos = e.GetPosition(MainGrid);
         var x = (int)Math.Min(pos.X, _startPoint.X);
         var y = (int)Math.Min(pos.Y, _startPoint.Y);
         var w = (int)Math.Abs(pos.X - _startPoint.X);
@@ -75,7 +91,6 @@ public partial class ScreenshotWindow : Window
         }
         else
         {
-            // Selection too small, treat as cancel
             Close();
         }
     }
