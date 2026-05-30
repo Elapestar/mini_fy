@@ -68,6 +68,12 @@ public partial class DisplayOnlyOverlay : Window
         UpdateTimerText();
         _timer.Start();
 
+        // Left edge at screen center, vertically centered
+        Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
+        var size = DesiredSize;
+        Left = SystemParameters.PrimaryScreenWidth / 2;
+        Top = (SystemParameters.PrimaryScreenHeight - size.Height) / 2;
+
         Show();
         Activate();
     }
