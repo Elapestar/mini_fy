@@ -68,6 +68,15 @@ public partial class DisplayOnlyOverlay : Window
         UpdateTimerText();
         _timer.Start();
 
+        // Position: right side, middle-lower (60% down)
+        Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
+        var size = DesiredSize;
+        double screenW = SystemParameters.PrimaryScreenWidth;
+        double screenH = SystemParameters.PrimaryScreenHeight;
+        Left = screenW - size.Width - 30;
+        Top = screenH * 0.55 - size.Height / 2;
+        if (Top < 0) Top = 10;
+
         Show();
         Activate();
     }
