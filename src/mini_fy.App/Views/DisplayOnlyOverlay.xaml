@@ -1,0 +1,31 @@
+<Window x:Class="mini_fy.App.Views.DisplayOnlyOverlay"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Topmost="True"
+        ShowInTaskbar="False"
+        ResizeMode="NoResize"
+        Background="#F8FFFFFF"
+        BorderBrush="#FFCCCCCC"
+        BorderThickness="1"
+        MinWidth="300" MaxWidth="700" MaxHeight="600"
+        WindowStartupLocation="CenterScreen"
+        SizeToContent="WidthAndHeight">
+
+    <Border Padding="16,12" CornerRadius="6" Background="White">
+        <StackPanel>
+            <TextBlock x:Name="TitleBlock" Text="翻译结果" FontSize="12"
+                       Foreground="#FF999999" Margin="0,0,0,10" />
+
+            <ScrollViewer x:Name="ContentScroller"
+                          VerticalScrollBarVisibility="Auto" MaxHeight="500">
+                <StackPanel x:Name="BlocksPanel" />
+            </ScrollViewer>
+
+            <TextBlock x:Name="TimerBlock" FontSize="11"
+                       Foreground="#FFAAAAAA" Margin="0,8,0,0"
+                       HorizontalAlignment="Right" />
+        </StackPanel>
+    </Border>
+</Window>

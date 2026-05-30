@@ -13,6 +13,8 @@ public partial class SettingsWindow : Window
     private readonly ITranslateService? _translateService;
     private string _modifiers = "Ctrl+Alt";
     private string _key = "Q";
+    private string _copyModifiers = "Ctrl+Alt";
+    private string _copyKey = "S";
 
     public SettingsWindow(ISettingsService settings, ITranslateService? translateService = null)
     {
@@ -20,6 +22,8 @@ public partial class SettingsWindow : Window
         _settings = settings;
         _translateService = translateService;
         LoadSettings();
+        ModeManualRadio.Checked += (_, _) => UpdateModePanel();
+        ModeAutoRadio.Checked += (_, _) => UpdateModePanel();
     }
 
     private void LoadSettings()
@@ -27,13 +31,31 @@ public partial class SettingsWindow : Window
         var cfg = _settings.Current;
         _modifiers = cfg.Hotkey.Modifiers;
         _key = cfg.Hotkey.Key;
+        _copyModifiers = cfg.General.CopyHotkeyModifiers;
+        _copyKey = cfg.General.CopyHotkeyKey;
+
         HotkeyDisplay.Text = $"{_modifiers} + {_key}";
+        CopyHotkeyDisplay.Text = $"{_copyModifiers} + {_copyKey}";
         AppIdTextBox.Text = cfg.BaiduApi.AppId;
         ApiKeyBox.Password = cfg.BaiduApi.ApiKey;
         AutoSaveCheck.IsChecked = cfg.Screenshot.AutoSave;
         AutoCopyCheck.IsChecked = cfg.General.AutoCopyTranslation;
         AutoStartCheck.IsChecked = cfg.General.AutoStartWithWindows;
         BypassProxyCheck.IsChecked = cfg.General.BypassProxy;
+
+        if (cfg.General.TranslateMode == Models.TranslateMode.Auto)
+            ModeAutoRadio.IsChecked = true;
+        else
+            ModeManualRadio.IsChecked = true;
+
+        AutoCloseSecondsBox.Text = cfg.General.AutoCloseSeconds.ToString();
+        UpdateModePanel();
+    }
+
+    private void UpdateModePanel()
+    {
+        bool isAuto = ModeAutoRadio.IsChecked == true;
+        AutoClosePanel.Visibility = isAuto ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)
@@ -41,6 +63,13 @@ public partial class SettingsWindow : Window
         var cfg = _settings.Current;
         cfg.Hotkey.Modifiers = _modifiers;
         cfg.Hotkey.Key = _key;
+        cfg.General.CopyHotkeyModifiers = _copyModifiers;
+        cfg.General.CopyHotkeyKey = _copyKey;
+        cfg.General.TranslateMode = ModeAutoRadio.IsChecked == true
+            ? Models.TranslateMode.Auto : Models.TranslateMode.Manual;
+        if (int.TryParse(AutoCloseSecondsBox.Text, out int secs) && secs >= 3 && secs <= 60)
+            cfg.General.AutoCloseSeconds = secs;
+
         cfg.BaiduApi.AppId = AppIdTextBox.Text.Trim();
         cfg.BaiduApi.ApiKey = ApiKeyBox.Password.Trim();
         cfg.Screenshot.AutoSave = AutoSaveCheck.IsChecked == true;
@@ -50,7 +79,7 @@ public partial class SettingsWindow : Window
 
         _settings.Save();
         _translateService?.RefreshProxySettings();
-        LogHelper.Info($"Settings saved.");
+        LogHelper.Info("Settings saved.");
         DialogResult = true;
         Close();
     }
@@ -70,6 +99,18 @@ public partial class SettingsWindow : Window
             _modifiers = dialog.Modifiers;
             _key = dialog.Key;
             HotkeyDisplay.Text = $"{_modifiers} + {_key}";
+        }
+    }
+
+    private void ChangeCopyHotkey_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new HotkeyCaptureDialog(_copyModifiers, _copyKey);
+        dialog.Owner = this;
+        if (dialog.ShowDialog() == true)
+        {
+            _copyModifiers = dialog.Modifiers;
+            _copyKey = dialog.Key;
+            CopyHotkeyDisplay.Text = $"{_copyModifiers} + {_copyKey}";
         }
     }
 

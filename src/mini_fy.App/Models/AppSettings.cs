@@ -37,4 +37,8 @@ public class GeneralConfig
     public bool AutoCopyTranslation { get; set; } = true;
     public bool AutoStartWithWindows { get; set; } = false;
     public bool BypassProxy { get; set; } = false;
+    public TranslateMode TranslateMode { get; set; } = TranslateMode.Manual;
+    public int AutoCloseSeconds { get; set; } = 10;
+    public string CopyHotkeyModifiers { get; set; } = "Ctrl+Alt";
+    public string CopyHotkeyKey { get; set; } = "S";
 }

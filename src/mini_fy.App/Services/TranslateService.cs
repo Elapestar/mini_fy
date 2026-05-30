@@ -160,6 +160,28 @@ public class TranslateService : ITranslateService, IDisposable
         }
     }
 
+    /// <summary>Translate multiple text blocks concurrently.</summary>
+    public async Task<List<TranslatedBlock>> TranslateBlocksAsync(List<OcrTextBlock> blocks, string from = "en", string to = "zh")
+    {
+        var results = new List<TranslatedBlock>();
+        if (blocks.Count == 0) return results;
+
+        var tasks = blocks.Select(async block =>
+        {
+            var result = await TranslateAsync(block.Text, from, to);
+            return new TranslatedBlock
+            {
+                OriginalText = block.Text,
+                TranslatedText = result.Success ? result.TranslatedText : $"[翻译失败] {result.ErrorMessage}",
+                BlockIndex = block.BlockIndex
+            };
+        });
+
+        var completed = await Task.WhenAll(tasks);
+        results.AddRange(completed.OrderBy(b => b.BlockIndex));
+        return results;
+    }
+
     private static string MapErrorCode(string code, string defaultMsg)
     {
         return code switch

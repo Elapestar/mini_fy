@@ -16,7 +16,8 @@ public partial class App : Application
     private ITranslateService _translateService = null!;
     private IOverlayService _overlayService = null!;
 
-    private Window? _messageWindow; // Hidden window to receive WM_HOTKEY
+    private Window? _messageWindow;
+    private string _lastTranslatedText = "";
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -45,13 +46,13 @@ public partial class App : Application
             LogHelper.Error("OCR init failed — English language pack may be missing", ex);
             _trayService.ShowNotification("mini_fy",
                 "OCR 初始化失败，请检查系统是否安装了英文语言包");
-            // Still continue — user can configure in settings
             _ocrService = new OcrService("en");
         }
 
-        // 4. Hotkey
+        // 4. Hotkeys
         _hotkeyService = new HotkeyService();
         _hotkeyService.HotkeyPressed += OnHotkeyPressed;
+        _hotkeyService.CopyHotkeyPressed += OnCopyHotkeyPressed;
 
         // 5. Tray
         _trayService.ScreenshotRequested += OnHotkeyPressed;
@@ -62,14 +63,21 @@ public partial class App : Application
         // 6. Create hidden window for hotkey messages
         _messageWindow = CreateMessageWindow();
         var hwnd = new WindowInteropHelper(_messageWindow).Handle;
-        var cfg = _settingsService.Current;
-        if (!_hotkeyService.Register(hwnd, cfg.Hotkey.Modifiers, cfg.Hotkey.Key))
-        {
-            _trayService.ShowNotification("mini_fy",
-                $"快捷键 {cfg.Hotkey.Modifiers}+{cfg.Hotkey.Key} 注册失败，可能被其他程序占用");
-        }
+        RegisterHotkeys(hwnd);
 
         LogHelper.Info("mini_fy started successfully");
+    }
+
+    private void RegisterHotkeys(IntPtr hwnd)
+    {
+        var cfg = _settingsService.Current;
+        if (!_hotkeyService.Register(hwnd,
+                cfg.Hotkey.Modifiers, cfg.Hotkey.Key,
+                cfg.General.CopyHotkeyModifiers, cfg.General.CopyHotkeyKey))
+        {
+            _trayService.ShowNotification("mini_fy",
+                "快捷键注册失败，可能被其他程序占用");
+        }
     }
 
     private Window CreateMessageWindow()
@@ -106,61 +114,136 @@ public partial class App : Application
     {
         try
         {
-            LogHelper.Info("Hotkey pressed, starting capture...");
-
-            // Capture screenshot (runs on UI thread)
-            var bitmap = _screenshotService.Capture();
-            if (bitmap == null)
+            var mode = _settingsService.Current.General.TranslateMode;
+            if (mode == Models.TranslateMode.Auto)
             {
-                LogHelper.Info("Screenshot cancelled");
-                return;
+                await RunAutoTranslate();
             }
-
-            // Run OCR + Translate in background
-            var ocrTask = Task.Run(async () =>
+            else
             {
-                var text = await _ocrService.RecognizeAsync(bitmap);
-                bitmap.Dispose();
-                return text;
-            });
-
-            var ocrText = await ocrTask;
-
-            if (string.IsNullOrWhiteSpace(ocrText))
-            {
-                _overlayService.Show(new Models.TranslationResult
-                {
-                    OriginalText = "(未识别到文字)",
-                    TranslatedText = "",
-                    ErrorMessage = "未识别到文字，请确认截图区域包含英文文本"
-                });
-                return;
+                await RunManualTranslate();
             }
-
-            var result = await _translateService.TranslateAsync(ocrText);
-
-            // Auto-copy
-            if (result.Success && _settingsService.Current.General.AutoCopyTranslation)
-            {
-                SafeCopyToClipboard(result.TranslatedText);
-            }
-
-            _overlayService.Show(result);
         }
         catch (Exception ex)
         {
             LogHelper.Error("Hotkey handler error", ex);
             _overlayService.Show(new Models.TranslationResult
             {
-                OriginalText = "",
-                TranslatedText = "",
+                OriginalText = "", TranslatedText = "",
                 ErrorMessage = $"程序异常: {ex.Message}"
             });
         }
     }
 
-    // Clipboard access may fail if another app has it locked (common in games).
-    // Retry up to 5 times with a brief delay.
+    private async Task RunManualTranslate()
+    {
+        LogHelper.Info("Manual screenshot started...");
+
+        var bitmap = _screenshotService.Capture();
+        if (bitmap == null)
+        {
+            LogHelper.Info("Screenshot cancelled");
+            return;
+        }
+
+        var ocrTask = Task.Run(async () =>
+        {
+            var text = await _ocrService.RecognizeAsync(bitmap);
+            bitmap.Dispose();
+            return text;
+        });
+
+        var ocrText = await ocrTask;
+
+        if (string.IsNullOrWhiteSpace(ocrText))
+        {
+            _overlayService.Show(new Models.TranslationResult
+            {
+                OriginalText = "(未识别到文字)", TranslatedText = "",
+                ErrorMessage = "未识别到文字，请确认截图区域包含英文文本"
+            });
+            return;
+        }
+
+        var result = await _translateService.TranslateAsync(ocrText);
+        StoreTranslation(result);
+
+        if (result.Success && _settingsService.Current.General.AutoCopyTranslation)
+            SafeCopyToClipboard(result.TranslatedText);
+
+        _overlayService.Show(result);
+    }
+
+    private async Task RunAutoTranslate()
+    {
+        LogHelper.Info("Auto full-screen translate started...");
+
+        // Capture full screen directly (no user interaction)
+        using var fullScreen = CaptureFullScreen();
+        if (fullScreen == null)
+        {
+            LogHelper.Error("Full screen capture failed");
+            return;
+        }
+
+        // OCR: find all text blocks
+        var blocks = await _ocrService.RecognizeBlocksAsync(fullScreen);
+        if (blocks.Count == 0)
+        {
+            _overlayService.Show(new Models.TranslationResult
+            {
+                OriginalText = "(未识别到文字)", TranslatedText = "",
+                ErrorMessage = "全屏未识别到英文文本"
+            });
+            return;
+        }
+
+        LogHelper.Info($"Auto OCR: {blocks.Count} text blocks found");
+
+        // Translate all blocks concurrently
+        var translated = await _translateService.TranslateBlocksAsync(blocks);
+
+        // Store for copy hotkey
+        var allText = string.Join("\n", translated.Select(b => b.TranslatedText));
+        _lastTranslatedText = allText;
+
+        // Show display-only overlay
+        int autoClose = _settingsService.Current.General.AutoCloseSeconds;
+        _overlayService.ShowAutoResult(translated, autoClose);
+    }
+
+    private void StoreTranslation(Models.TranslationResult result)
+    {
+        if (result.Success)
+            _lastTranslatedText = result.TranslatedText;
+    }
+
+    private void OnCopyHotkeyPressed()
+    {
+        if (!string.IsNullOrWhiteSpace(_lastTranslatedText))
+        {
+            SafeCopyToClipboard(_lastTranslatedText);
+            LogHelper.Info("Copy hotkey: last translation copied to clipboard");
+        }
+    }
+
+    private static System.Drawing.Bitmap? CaptureFullScreen()
+    {
+        int x = Win32Api.GetSystemMetrics(Win32Api.SM_XVIRTUALSCREEN);
+        int y = Win32Api.GetSystemMetrics(Win32Api.SM_YVIRTUALSCREEN);
+        int w = Win32Api.GetSystemMetrics(Win32Api.SM_CXVIRTUALSCREEN);
+        int h = Win32Api.GetSystemMetrics(Win32Api.SM_CYVIRTUALSCREEN);
+
+        if (w <= 0) w = Win32Api.GetSystemMetrics(Win32Api.SM_CXSCREEN);
+        if (h <= 0) h = Win32Api.GetSystemMetrics(Win32Api.SM_CYSCREEN);
+
+        var bitmap = new System.Drawing.Bitmap(w, h,
+            System.Drawing.Imaging.PixelFormat.Format32bppRgb);
+        using var g = System.Drawing.Graphics.FromImage(bitmap);
+        g.CopyFromScreen(x, y, 0, 0, new System.Drawing.Size(w, h));
+        return bitmap;
+    }
+
     private static void SafeCopyToClipboard(string text)
     {
         for (int i = 0; i < 5; i++)
@@ -183,13 +266,11 @@ public partial class App : Application
         var window = new Views.SettingsWindow(_settingsService, _translateService);
         window.ShowDialog();
 
-        // Re-register hotkey if changed
         if (_messageWindow != null)
         {
             var hwnd = new WindowInteropHelper(_messageWindow).Handle;
             _hotkeyService.Unregister(hwnd);
-            var cfg = _settingsService.Current;
-            _hotkeyService.Register(hwnd, cfg.Hotkey.Modifiers, cfg.Hotkey.Key);
+            RegisterHotkeys(hwnd);
         }
     }
 

@@ -17,6 +17,10 @@
   "general": {
     "autoCopyTranslation": true,
     "autoStartWithWindows": false,
-    "bypassProxy": false
+    "bypassProxy": false,
+    "translateMode": "Manual",
+    "autoCloseSeconds": 10,
+    "copyHotkeyModifiers": "Ctrl+Alt",
+    "copyHotkeyKey": "S"
   }
 }

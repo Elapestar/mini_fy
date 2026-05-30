@@ -5,4 +5,5 @@ namespace mini_fy.App.Services;
 public interface IOverlayService
 {
     void Show(TranslationResult result, System.Windows.Point? nearPoint = null);
+    void ShowAutoResult(List<TranslatedBlock> blocks, int autoCloseSeconds);
 }

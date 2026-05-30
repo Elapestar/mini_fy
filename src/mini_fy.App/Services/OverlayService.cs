@@ -13,4 +13,13 @@ public class OverlayService : IOverlayService
             overlay.ShowResult(result, nearPoint);
         });
     }
+
+    public void ShowAutoResult(List<TranslatedBlock> blocks, int autoCloseSeconds)
+    {
+        System.Windows.Application.Current.Dispatcher.Invoke(() =>
+        {
+            var overlay = new DisplayOnlyOverlay();
+            overlay.ShowBlocks(blocks, autoCloseSeconds);
+        });
+    }
 }
