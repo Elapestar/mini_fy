@@ -68,13 +68,13 @@ public partial class DisplayOnlyOverlay : Window
         UpdateTimerText();
         _timer.Start();
 
-        Loaded += (_, _) =>
-        {
-            // Slide right so left edge is at screen center
-            Left = SystemParameters.PrimaryScreenWidth / 2;
-        };
-
         Show();
+
+        // Run after WPF finishes centering — slide right
+        Dispatcher.BeginInvoke(() =>
+        {
+            Left = SystemParameters.PrimaryScreenWidth / 2;
+        }, System.Windows.Threading.DispatcherPriority.Loaded);
         Activate();
     }
 
