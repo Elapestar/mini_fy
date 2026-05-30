@@ -10,7 +10,7 @@
         BorderBrush="#FFCCCCCC"
         BorderThickness="1"
         MinWidth="300" MaxWidth="700" MaxHeight="600"
-        WindowStartupLocation="Manual"
+        WindowStartupLocation="CenterScreen"
         SizeToContent="WidthAndHeight">
 
     <Border Padding="16,12" CornerRadius="6" Background="White">
