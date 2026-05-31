@@ -78,13 +78,14 @@ public partial class DisplayOnlyOverlay : Window
         UpdateTimerText();
         _timer.Start();
 
-        Show();
-
-        // Run after WPF finishes centering — slide right
-        Dispatcher.BeginInvoke(() =>
+        Loaded += (_, _) =>
         {
-            Left = SystemParameters.PrimaryScreenWidth / 2;
-        }, System.Windows.Threading.DispatcherPriority.Loaded);
+            // ---- 弹窗位置（手动修改下面两行）----
+            Left = (SystemParameters.PrimaryScreenWidth - ActualWidth) / 4 * 3 + 100;  // 水平：屏幕居中
+            Top  = (SystemParameters.PrimaryScreenHeight - ActualHeight) / 2; // 垂直：屏幕居中
+        };
+
+        Show();
     }
 
     private void Timer_Tick(object? sender, EventArgs e)
