@@ -5,6 +5,7 @@
         AllowsTransparency="True"
         Topmost="True"
         ShowInTaskbar="False"
+        ShowActivated="False"
         ResizeMode="NoResize"
         Background="#F8FFFFFF"
         BorderBrush="#FFCCCCCC"

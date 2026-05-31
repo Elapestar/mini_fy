@@ -22,6 +22,16 @@ public partial class DisplayOnlyOverlay : Window
         InitializeComponent();
         _timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _timer.Tick += Timer_Tick;
+
+        SourceInitialized += (_, _) =>
+        {
+            // Prevent window from ever stealing focus (critical for gaming)
+            var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+            const int WS_EX_NOACTIVATE = 0x08000000;
+            const int GWL_EXSTYLE = -20;
+            int exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+            SetWindowLong(hwnd, GWL_EXSTYLE, exStyle | WS_EX_NOACTIVATE);
+        };
     }
 
     public void ShowBlocks(List<TranslatedBlock> blocks, int autoCloseSeconds)
@@ -75,7 +85,6 @@ public partial class DisplayOnlyOverlay : Window
         {
             Left = SystemParameters.PrimaryScreenWidth / 2;
         }, System.Windows.Threading.DispatcherPriority.Loaded);
-        Activate();
     }
 
     private void Timer_Tick(object? sender, EventArgs e)
@@ -100,4 +109,10 @@ public partial class DisplayOnlyOverlay : Window
         _timer.Stop();
         base.OnClosed(e);
     }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
 }
